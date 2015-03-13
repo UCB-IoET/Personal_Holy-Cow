@@ -40,15 +40,13 @@ int led_init(lua_State *L)
  temp = lua_tonumber(L,3);
  memcpy(&(led->cpin), &temp, sizeof(int));
   
- //storm.io.set(1, storm.io.D4, storm.io.D5);
  //set them as output pins
-
- lua_pushlightfunction(L, "storm.io.set");
+ lua_pushlightfunction(L, libstorm_io_set_mode);
  lua_pushnumber(L,0);
  lua_pushnumber(L, led->dpin); //D4
  lua_pushnumber(L, led->cpin); //D5
- lua_call(L, 4, 0);
- 
+ lua_call(L, 3, 0);
+
  lua_pushrotable (L, (void *) led_meta_map);
  lua_setmetatable(L, -2);
  return 1;
@@ -56,6 +54,7 @@ int led_init(lua_State *L)
 
 int display(lua_State *L)
 {
+ printf("LED Strip Display Test\n");
  struct led_strip *led = lua_touserdata(L,1);
  
  int i,j;
@@ -66,7 +65,7 @@ int display(lua_State *L)
 	for(j=23; j>=0; j--)
 	{
 		//write LOW to clock
- 		lua_pushlightfunction(L, "storm.io.set");
+ 		lua_pushlightfunction(L, libstorm_io_set);
 		lua_pushnumber(L,0);
 		lua_pushnumber(L, led->cpin);
 		lua_call(L, 2, 0);
@@ -74,7 +73,7 @@ int display(lua_State *L)
 		uint32_t mask = 1<< 24;
 		if(this_color & mask)
 		{
- 			lua_pushlightfunction(L, "storm.io.set");
+ 			lua_pushlightfunction(L, libstorm_io_set);
 			lua_pushnumber(L,1);
 			lua_pushnumber(L, led->dpin);
 			lua_call(L, 2, 0);
@@ -82,21 +81,21 @@ int display(lua_State *L)
 
 		else
 		{
- 			lua_pushlightfunction(L, "storm.io.set");
+ 			lua_pushlightfunction(L, libstorm_io_set);
 			lua_pushnumber(L,1);
 			lua_pushnumber(L, led->dpin);
 			lua_call(L, 2, 0);
 		}
 		
 		
- 		lua_pushlightfunction(L, "storm.io.set");
+ 		lua_pushlightfunction(L, libstorm_io_set);
 		lua_pushnumber(L,1);
 		lua_pushnumber(L, led->cpin);
 		lua_call(L, 2, 0);
 	}
  }
 
- lua_pushlightfunction(L, "storm.io.set");
+ lua_pushlightfunction(L, libstorm_io_set);
  lua_pushnumber(L,0);
  lua_pushnumber(L, led->cpin);
  lua_call(L, 2, 0);
@@ -108,11 +107,12 @@ int display(lua_State *L)
 
 int set(lua_State *L)
 {
+    printf("LED Strip Set Test\n");
 	struct led_strip *led = lua_touserdata(L,1);
 	int index = lua_tonumber(L, 2);
 	uint32_t r = (uint32_t)lua_tonumber(L,3); 
-	uint32_t g = (uint32_t)lua_tonumber(L,3); 
-	uint32_t b = (uint32_t)lua_tonumber(L,3); 
+	uint32_t g = (uint32_t)lua_tonumber(L,4); 
+	uint32_t b = (uint32_t)lua_tonumber(L,5); 
 
 	if( (r>255) || (g>255) || (b>255))
 	{
@@ -121,6 +121,7 @@ int set(lua_State *L)
 	}
 
 	led->rgbpixel[index] = (r<<4) | (g<<2) | b;
+    printf("%d", led->rgbpixel[index]);
 	return 0;
 }
  
