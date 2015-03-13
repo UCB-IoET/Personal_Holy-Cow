@@ -2,20 +2,22 @@
 
 #define LED_SYMBOLS \
 	{ LSTRKEY("led_init"), LFUNCVAL(led_init)}, \
+    { LSTRKEY("led_display"), LFUNCVAL (display)}, \
+    { LSTRKEY("led_set"), LFUNCVAL (set)},
 
 unsigned int cc;
 
 struct led_strip
 {
  int nled;
- unsigned int rgbpixel[MAX];
+ uint32_t * rgbpixel;
  int dpin;
  int cpin;
 };
 
-struct const LUA_REG_TYPE led_meta_map[] =
+static const LUA_REG_TYPE led_meta_map[] =
 {
- { LSTRKEY("display"), LFUNCVAL (led_display)},
+
  {LNILKEY, LNILVAL}
 };
 
@@ -23,13 +25,13 @@ struct const LUA_REG_TYPE led_meta_map[] =
 int led_init(lua_State *L)
 {
  printf("Digital LED Strip Test\n");
- struct led_strip led = lua_newuserdata(L, sizeof(struct led_strip));  
+ struct led_strip * led = lua_newuserdata(L, sizeof(struct led_strip));  
 
  led->nled = (int)malloc(sizeof(int));
  int temp = lua_tonumber(L, 1);
  memcpy(&(led->nled), &temp, sizeof(int));
  
- led->rgbpixel = (int *)malloc(temp*sizeof(unsigned int));
+ led->rgbpixel = (uint32_t *)malloc(temp*sizeof(uint32_t));
  memset(led->rgbpixel, 0, temp);
  
  temp = lua_tonumber(L,2);
@@ -41,7 +43,7 @@ int led_init(lua_State *L)
  //storm.io.set(1, storm.io.D4, storm.io.D5);
  //set them as output pins
 
- lua_pushlightfunction(L, storm.io.set);
+ lua_pushlightfunction(L, "storm.io.set");
  lua_pushnumber(L,0);
  lua_pushnumber(L, led->dpin); //D4
  lua_pushnumber(L, led->cpin); //D5
@@ -59,12 +61,12 @@ int display(lua_State *L)
  int i,j;
  for(i=0;i<led->nled;i++)
  {
-	uint32_t this_color= rgbpixel[i];
+	uint32_t this_color= led->rgbpixel[i];
 	
 	for(j=23; j>=0; j--)
 	{
 		//write LOW to clock
- 		lua_pushlightfunction(L, storm.io.set);
+ 		lua_pushlightfunction(L, "storm.io.set");
 		lua_pushnumber(L,0);
 		lua_pushnumber(L, led->cpin);
 		lua_call(L, 2, 0);
@@ -72,7 +74,7 @@ int display(lua_State *L)
 		uint32_t mask = 1<< 24;
 		if(this_color & mask)
 		{
- 			lua_pushlightfunction(L, storm.io.set);
+ 			lua_pushlightfunction(L, "storm.io.set");
 			lua_pushnumber(L,1);
 			lua_pushnumber(L, led->dpin);
 			lua_call(L, 2, 0);
@@ -80,21 +82,21 @@ int display(lua_State *L)
 
 		else
 		{
- 			lua_pushlightfunction(L, storm.io.set);
+ 			lua_pushlightfunction(L, "storm.io.set");
 			lua_pushnumber(L,1);
 			lua_pushnumber(L, led->dpin);
 			lua_call(L, 2, 0);
 		}
 		
 		
- 		lua_pushlightfunction(L, storm.io.set);
+ 		lua_pushlightfunction(L, "storm.io.set");
 		lua_pushnumber(L,1);
 		lua_pushnumber(L, led->cpin);
 		lua_call(L, 2, 0);
 	}
  }
 
- lua_pushlightfunction(L, storm.io.set);
+ lua_pushlightfunction(L, "storm.io.set");
  lua_pushnumber(L,0);
  lua_pushnumber(L, led->cpin);
  lua_call(L, 2, 0);
@@ -118,7 +120,7 @@ int set(lua_State *L)
 		return 0;
 	}
 
-	led->rgbpixel[index] = ((r<<4) | (g<<2) | b;
+	led->rgbpixel[index] = (r<<4) | (g<<2) | b;
 	return 0;
 }
  
