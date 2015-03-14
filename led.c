@@ -58,39 +58,36 @@ int led_init(lua_State *L)
 
 int display(lua_State *L)
 {
- printf("LED Strip Display Test\n");
- struct led_strip *led = lua_touserdata(L,1);
- 		lua_pushlightfunction(L, libstorm_io_set);
-		lua_pushnumber(L,1);
-		lua_pushnumber(L, led->cpin);
-		lua_call(L, 2, 0);
- 		lua_pushlightfunction(L, libstorm_io_set);
-		lua_pushnumber(L,0);
-		lua_pushnumber(L, led->cpin);
-		lua_call(L, 2, 0);
+    printf("LED Strip Display Test\n");
+    struct led_strip *led = lua_touserdata(L,1);
 
- int k;
- for (k=0; k<31; k++) {
- 		lua_pushlightfunction(L, libstorm_io_set);
-		lua_pushnumber(L,0);
-		lua_pushnumber(L, led->dpin);
-		lua_call(L, 2, 0);
- 		lua_pushlightfunction(L, libstorm_io_set);
-		lua_pushnumber(L,1);
-		lua_pushnumber(L, led->cpin);
-		lua_call(L, 2, 0);
- 		lua_pushlightfunction(L, libstorm_io_set);
-		lua_pushnumber(L,0);
-		lua_pushnumber(L, led->cpin);
-		lua_call(L, 2, 0);
-}
- int i,j;
- for(i=0;i<led->nled;i++)
- {
-	lua_pushlightfunction(L, libstorm_io_set);
-	lua_pushnumber(L,1);
+    //Set data pin to low
+    lua_pushlightfunction(L, libstorm_io_set);
+	lua_pushnumber(L,0);
 	lua_pushnumber(L, led->dpin);
 	lua_call(L, 2, 0);
+    //Toggle clock pin 32 times
+    int k;
+    for (k=0; k<32; k++) {
+        lua_pushlightfunction(L, libstorm_io_set);
+		lua_pushnumber(L,1);
+		lua_pushnumber(L, led->cpin);
+		lua_call(L, 2, 0);
+ 		lua_pushlightfunction(L, libstorm_io_set);
+		lua_pushnumber(L,0);
+		lua_pushnumber(L, led->cpin);
+		lua_call(L, 2, 0);
+    }
+    
+    // Iterate over all leds
+    int i,j;
+    for(i=0;i<led->nled;i++)
+    {
+        //Output 1 as start bit
+        lua_pushlightfunction(L, libstorm_io_set);
+        lua_pushnumber(L,1);
+        lua_pushnumber(L, led->dpin);
+        lua_call(L, 2, 0);
  		lua_pushlightfunction(L, libstorm_io_set);
 		lua_pushnumber(L,1);
 		lua_pushnumber(L, led->cpin);
@@ -100,82 +97,60 @@ int display(lua_State *L)
 		lua_pushnumber(L, led->cpin);
 		lua_call(L, 2, 0);
 
-
-	uint16_t this_color= led->rgbpixel[i];
-	printf("%x\n", led->rgbpixel[i]);
-	for(j=14; j>=0; j--)
-	{	
-		uint16_t mask = 1<< j;
-		if(this_color & mask)
-		{
- 			lua_pushlightfunction(L, libstorm_io_set);
-			lua_pushnumber(L,1);
-			lua_pushnumber(L, led->dpin);
-			lua_call(L, 2, 0);
-            printf("index %d write high", i);
-		}
-
-		else
-		{
- 			lua_pushlightfunction(L, libstorm_io_set);
-			lua_pushnumber(L,0);
-			lua_pushnumber(L, led->dpin);
-			lua_call(L, 2, 0);
-            //printf("index %d write low", j);
-		}
-		
-		
+        uint16_t this_color= led->rgbpixel[i];
+        printf("%x\n", led->rgbpixel[i]);
+        for(j=14; j>=0; j--)
+        {	
+    		uint16_t mask = 1<< j;
+    		if(this_color & mask)
+    		{
+     			lua_pushlightfunction(L, libstorm_io_set);
+    			lua_pushnumber(L,1);
+    			lua_pushnumber(L, led->dpin);
+    			lua_call(L, 2, 0);
+                //printf("index %d write high", i);
+    		}
+	        else
+	    	{
+ 	    		lua_pushlightfunction(L, libstorm_io_set);
+	    		lua_pushnumber(L,0);
+	    		lua_pushnumber(L, led->dpin);
+	    		lua_call(L, 2, 0);
+                //printf("index %d write low", j);
+	    	}
+			
+ 		    lua_pushlightfunction(L, libstorm_io_set);
+		    lua_pushnumber(L,1);
+		    lua_pushnumber(L, led->cpin);
+		    lua_call(L, 2, 0);
+ 		    lua_pushlightfunction(L, libstorm_io_set);
+		    lua_pushnumber(L,0);
+		    lua_pushnumber(L, led->cpin);
+		    lua_call(L, 2, 0);
+	    }
+        lua_pushlightfunction(L, libstorm_os_invoke_later);
+        lua_pushnumber(L, 1 * MILLISECOND_TICKS);
+    }
+    //nled pulse
+ 	lua_pushlightfunction(L, libstorm_io_set);
+	lua_pushnumber(L,0);
+	lua_pushnumber(L, led->dpin);
+	lua_call(L, 2, 0);
+    int l;
+    for (l=0; l<8*led->nled; l++) {
  		lua_pushlightfunction(L, libstorm_io_set);
 		lua_pushnumber(L,1);
 		lua_pushnumber(L, led->cpin);
 		lua_call(L, 2, 0);
-		//write LOW to clock
  		lua_pushlightfunction(L, libstorm_io_set);
 		lua_pushnumber(L,0);
 		lua_pushnumber(L, led->cpin);
 		lua_call(L, 2, 0);
-	}
- }
+    }
 
- lua_pushlightfunction(L, libstorm_io_set);
- lua_pushnumber(L,1);
- lua_pushnumber(L, led->cpin);
- lua_call(L, 2, 0);
- lua_pushlightfunction(L, libstorm_io_set);
- lua_pushnumber(L,0);
- lua_pushnumber(L, led->cpin);
- lua_call(L, 2, 0);
-
- lua_pushlightfunction(L, libstorm_io_set);
- lua_pushnumber(L,0);
- lua_pushnumber(L, led->dpin);
- lua_call(L, 2, 0);
-
- lua_pushlightfunction(L, libstorm_io_set);
- lua_pushnumber(L,1);
- lua_pushnumber(L, led->cpin);
- lua_call(L, 2, 0);
- lua_pushlightfunction(L, libstorm_io_set);
- lua_pushnumber(L,0);
- lua_pushnumber(L, led->cpin);
- lua_call(L, 2, 0);
-/*
-int k;
-for(k = 8 * led->nled; k>0; k--) {
- lua_pushlightfunction(L, libstorm_io_set);
- lua_pushnumber(L,1);
- lua_pushnumber(L, led->cpin);
- lua_call(L, 2, 0);
- lua_pushlightfunction(L, libstorm_io_set);
- lua_pushnumber(L,0);
- lua_pushnumber(L, led->cpin);
- lua_call(L, 2, 0);
-  }*/
-
-
- 
- return 0;
-
+    lua_pushlightfunction(L, libstorm_os_invoke_later);
+    lua_pushnumber(L, 1 * MILLISECOND_TICKS);
+    return 0;
 }
 
 
@@ -184,11 +159,11 @@ int set(lua_State *L)
     printf("LED Strip Set Test\n");
 	struct led_strip *led = lua_touserdata(L,1);
 	int index = lua_tonumber(L, 2);
-	uint32_t r = (uint32_t)lua_tonumber(L,3); 
-	uint32_t g = (uint32_t)lua_tonumber(L,4); 
-	uint32_t b = (uint32_t)lua_tonumber(L,5); 
+	uint16_t r = (uint16_t)lua_tonumber(L,3); 
+	uint16_t g = (uint16_t)lua_tonumber(L,4); 
+	uint16_t b = (uint16_t)lua_tonumber(L,5); 
 
-	if( (r>255) || (g>255) || (b>255))
+	if( (r>31) || (g>31) || (b>31))
 	{
 		printf("RGB values out of range\n");
 		return 0;
@@ -200,6 +175,7 @@ int set(lua_State *L)
     data <<= 5;
     data |= r & 0x1F;
     data |= 0x8000;
+    printf("%x\n", data);
 	led->rgbpixel[index] = data;
     //printf("%d", led->rgbpixel[index]);
 	return 0;
