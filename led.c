@@ -77,14 +77,16 @@ int display(lua_State *L)
 			lua_pushnumber(L,1);
 			lua_pushnumber(L, led->dpin);
 			lua_call(L, 2, 0);
+            //printf("index %d write high", j);
 		}
 
 		else
 		{
  			lua_pushlightfunction(L, libstorm_io_set);
-			lua_pushnumber(L,1);
+			lua_pushnumber(L,0);
 			lua_pushnumber(L, led->dpin);
 			lua_call(L, 2, 0);
+            //printf("index %d write low", j);
 		}
 		
 		
@@ -94,11 +96,25 @@ int display(lua_State *L)
 		lua_call(L, 2, 0);
 	}
  }
+  
 
+ lua_pushlightfunction(L, libstorm_io_set);
+ lua_pushnumber(L,0);
+ lua_pushnumber(L, led->dpin);
+ lua_call(L, 2, 0);
+int k;
+for(k = 8 * led->nled; k>0; k--) {
+ lua_pushlightfunction(L, libstorm_io_set);
+ lua_pushnumber(L,1);
+ lua_pushnumber(L, led->cpin);
+ lua_call(L, 2, 0);
  lua_pushlightfunction(L, libstorm_io_set);
  lua_pushnumber(L,0);
  lua_pushnumber(L, led->cpin);
  lua_call(L, 2, 0);
+  }
+
+
  
  return 0;
 
@@ -121,7 +137,7 @@ int set(lua_State *L)
 	}
 
 	led->rgbpixel[index] = (r<<4) | (g<<2) | b;
-    printf("%d", led->rgbpixel[index]);
+    //printf("%d", led->rgbpixel[index]);
 	return 0;
 }
  
