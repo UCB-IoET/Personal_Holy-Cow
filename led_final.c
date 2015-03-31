@@ -91,7 +91,8 @@ int led_init(lua_State *L)
 }
 
 /*
-
+Function call: display()
+Displays the values set in rgbpixel array in struct led_strip
 */
 int display(lua_State *L)
 {
@@ -99,6 +100,7 @@ int display(lua_State *L)
     uint32_t dportmask = (led->dport * 2) << 8;    
     uint32_t cportmask = (led->cport * 2) << 8;
 
+    //Setup data and clock pins as output pins
 	uint32_t volatile *data_gpio = (uint32_t *) (REG_GPERS | dportmask);
 	*data_gpio = 1 << led->dpin;
 	uint32_t volatile *clock_gpio = (uint32_t *) (REG_GPERS | cportmask);
@@ -109,6 +111,7 @@ int display(lua_State *L)
 	uint32_t volatile *clock_oder = (uint32_t *) (REG_ODERS | cportmask);
 	*clock_oder = 1 << led->cpin;
 
+    //Data and clock pin set and clear registers
 	uint32_t volatile *data_ovrs = (uint32_t *) (REG_OVRS | dportmask);
     uint32_t volatile *data_ovrc = (uint32_t *) (REG_OVRC | dportmask);
 	uint32_t volatile *clock_ovrs = (uint32_t *) (REG_OVRS | cportmask);
@@ -156,9 +159,14 @@ int display(lua_State *L)
     return 0;
 }
 
+/*
+Function call: set(index, r, g, b)
+index: integer between 0 and number of leds - 1
+r, g, b: integer between 0 and MAX_COLOR_VALUE
+Upon successful call, function sets required value in specified index of rgbpixel. To see set value, call display().
+*/
 int set(lua_State *L)
 {
-    printf("LED Strip Set Test\n");
 	struct led_strip *led = lua_touserdata(L,1);
 	int index = lua_tonumber(L, 2);
 	uint16_t r = (uint16_t)lua_tonumber(L,3); 
@@ -182,6 +190,11 @@ int set(lua_State *L)
 	return 0;
 }
 
+/*
+Function call: setAll(r, g, b)
+r, g, b: integer between 0 and MAX_COLOR_VALUE
+Upon successful call, function sets required value in all indices of rgbpixel. To see set value, call display().
+*/
 int set_all(lua_State *L) {
 	struct led_strip *led = lua_touserdata(L,1);
 	uint16_t r = (uint16_t)lua_tonumber(L,2); 
