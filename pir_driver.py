@@ -1,9 +1,6 @@
 import time
 import urllib2
-import StringIO
-import RPi.GPIO as GPIO
 import sys
-import time
 import msgpack
 import socket
 from smap import driver, util
