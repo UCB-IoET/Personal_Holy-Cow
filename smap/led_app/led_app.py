@@ -10,26 +10,29 @@ from smap import driver, util
 class ledApp(driver.SmapDriver):
     
     def setup(self, opts):
-        self.rate = float(opts.get('rate', 1))
+        self.index = 0
+	self.color_index = 0
+	self.color = [992, 31, 31744]
+	self.rate = float(opts.get('rate', 1))
         self.add_timeseries('/index', 'unit', data_type='double')
 	self.add_timeseries('/rgb', 'unit', data_type='double')
-        #add_timeseries(self, path, *args, **kwargs):
-
 #        self.set_metadata('/led_app', {
 #                          'Metadata/Description' : 'Application to link PIR to LED',
 #                         })
 
 	self.archiverurl = opts.get('archiverurl','http://shell.storm.pm:8079')                                                
-        self.subscription = opts.get('subscription','Metadata/SourceName = "Passive Infrared Motion Sensor Driver"')
+        self.subscription = opts.get('subscription','Metadata/Sourcename = "PIR Sensor Driver"')
         self.r = RepublishClient(self.archiverurl, self.cb, restrict=self.subscription)                                        
 
     def cb(self, points, pir_value):
         print points, pir_value
-	index = pir_value[0][0][-1] + 0.0
-	rgb = ((31 << 10) | (31 << 5) | 31) + 0.0
-	curr_time = time.time()
-	self.add('/index',curr_time, index)
-	self.add('/rgb', curr_time, rgb)
+	if pir_value[0][0][-1] == 1:
+		rgb = self.color[self.color_index]
+		curr_time = time.time()
+		self.add('/index',curr_time, self.index+0.0)
+		self.add('/rgb', curr_time, rgb+0.0)
+		self.index = (self.index + 1) % 50
+		self.color_index = (self.color_index + 1) % 3
     
     def start(self):
 	self.r.connect()
