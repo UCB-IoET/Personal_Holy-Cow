@@ -1,8 +1,7 @@
 require ("cord")
 calibrationTime=30
 pirPin = storm.io.D2
-
-shellip = "2001:470:66:b0::2"
+shellip = "2001:470:66:3f9::2"
 listen_port = 1337
 sendsock = storm.net.udpsocket(listen_port, function() end)
 
@@ -26,7 +25,6 @@ end
 
 cord.new(function()
 	setup()
-	
 	while (1) do
 		cord.await(storm.os.invokeLater, storm.os.SECOND)
 		pir = loop()
