@@ -16,7 +16,8 @@ end
 
 function loop()
 	pirVal= storm.io.get(pirPin)
-	if(pirVal ==1) then print("Motion Detected") end
+	if(pirVal ==1) then print("Motion Detected")
+	else print("Motion Not Detected") end
 end 
 
 cord.new(function()
