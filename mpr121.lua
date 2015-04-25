@@ -25,20 +25,20 @@ local codes = {
 	MPR121_DEBOUNCE        = 0x5B,
 	MPR121_CONFIG1         = 0x5C,
 	MPR121_CONFIG2         = 0x5D,
-	MPR121_CHARGECURR_0    = 0x5F,
-	MPR121_CHARGETIME_1    = 0x6C,
+	--MPR121_CHARGECURR_0    = 0x5F,
+	--MPR121_CHARGETIME_1    = 0x6C,
 	MPR121_ECR             = 0x5E,
-	MPR121_AUTOCONFIG0     = 0x7B,
-	MPR121_AUTOCONFIG1     = 0x7C,
-	MPR121_UPLIMIT         = 0x7D,
-	MPR121_LOWLIMIT        = 0x7E,
-	MPR121_TARGETLIMIT     = 0x7F,
+	--MPR121_AUTOCONFIG0     = 0x7B,
+	--MPR121_AUTOCONFIG1     = 0x7C,
+	--MPR121_UPLIMIT         = 0x7D,
+	--MPR121_LOWLIMIT        = 0x7E,
+	--MPR121_TARGETLIMIT     = 0x7F,
 
-	MPR121_GPIODIR         = 0x76,
-	MPR121_GPIOEN          = 0x77,
-	MPR121_GPIOSET         = 0x78,
-	MPR121_GPIOCLR         = 0x79,
-	MPR121_GPIOTOGGLE      = 0x7A,
+	--MPR121_GPIODIR         = 0x76,
+	--MPR121_GPIOEN          = 0x77,
+	--MPR121_GPIOSET         = 0x78,
+	--MPR121_GPIOCLR         = 0x79,
+	--MPR121_GPIOTOGGLE      = 0x7A,
 
 	MPR121_SOFTRESET       = 0x80,
 }
@@ -46,8 +46,8 @@ local codes = {
 local MPR121 = {}
 
 function MPR121:new()
-   local obj = {port=storm.i2c.INT, addr = codes.MPR121_I2CADDR_DEFAULT, 
-                reg=REG:new(storm.i2c.INT, codes.MPR121_I2CADDR_DEFAULT)}
+   local obj = {port=storm.i2c.EXT, addr = 0xB4, 
+                reg=REG:new(storm.i2c.EXT, 0xB4)}
    setmetatable(obj, self)
    self.__index = self
    return obj
@@ -60,7 +60,7 @@ function MPR121:begin()
 
     c = self.reg:r(codes.MPR121_CONFIG2, 1)
     if (c ~= 0x24) then return false end
-    self:setThreshholds(12, 6)
+    self:setThresholds(12, 6)
 
     self.reg:w(codes.MPR121_MHDR, 0x01)
     self.reg:w(codes.MPR121_NHDR, 0x01)
@@ -91,6 +91,7 @@ function MPR121:setThresholds(touch, release)
   end
 end
 
+--[[
 function MPR121:filteredData(t)
   if (t > 12) then return 0 end
   return self.reg:r(codes.MPR121_FILTDATA_0L + t*2)
@@ -101,10 +102,11 @@ function MPR121:baselineData(t)
   bl = self.reg:r(codes.MPR121_BASELINE_0 + t, 1)
   return bit.lshift(bl, 2)
 end
+]]--
 
 function MPR121:touched()
   t = self.reg:r(codes.MPR121_TOUCHSTATUS_L, 2)
-  return bit.band(t, 0x0FFF)
+  return bit.band(bit.bor(bit.lshift(t:get(2),8), t:get(1)), 0x0FFF)
 end
 
 return MPR121
