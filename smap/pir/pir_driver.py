@@ -24,11 +24,15 @@ class PIRDriver(driver.SmapDriver):
 	self.sock.bind((UDP_IP, UDP_PORT))
     
     def start(self):
+	print "START"
         util.periodicSequentialCall(self.read).start(self.rate)
     
     def read(self):
+	print "READ"
         data, addr = self.sock.recvfrom(1024)
-        pir_val = msgpack.unpackb(data)
+	print "\nRECEIVED: ", data, addr
+        pir_val = msgpack.unpackb(data) + 0.0
+	print "\nPIR_VALUE", pir_val
  	self.add('/PIR', time.time(), pir_val)
 
     def stop(self):
