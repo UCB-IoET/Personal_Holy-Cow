@@ -24,7 +24,7 @@ class ledDriver(driver.SmapDriver):
 	self.subscription_show = opts.get('subscription', 'Path= "/led_app/1/show"')
         self.r1 = RepublishClient(self.archiverurl, self.cb_index, restrict=self.subscription_index) 
 	self.r2 = RepublishClient(self.archiverurl, self.cb_rgb, restrict=self.subscription_rgb)  
-	self.r3 = RepublishClient(self.archiveurl, self.cb_show, restrict=self.subscription_show)
+	self.r3 = RepublishClient(self.archiverurl, self.cb_show, restrict=self.subscription_show)
 
 	self.table = {} 
 
@@ -65,7 +65,7 @@ class ledDriver(driver.SmapDriver):
 		self.table[led_rgb[0][0][-2]] = {}
 	self.table[led_rgb[0][0][-2]][1] = rgb
 
-     def cb_show(self, points, led_show ):
+    def cb_show(self, points, led_show ):
 	print "Points: ",points
 	print "\nData" , led_show
 	print "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"
