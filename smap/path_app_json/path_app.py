@@ -1,11 +1,12 @@
-import time
+import time,random
 import urllib2
 import sys
-import msgpack
-import socket
+from smap import util
 from smap.archiver.client import RepublishClient
-import pycurl,json
+import pycurl,json,requests
 from StringIO import StringIO
+from twisted.internet import reactor
+from twisted.web import server,proxy
 
 archiverurl = 'http://shell.storm.pm:8079'
 subscription_src = 'Path= "/touch/1/src"'
@@ -14,57 +15,93 @@ table = {}
 #excute curl request to get metadata with led path
 storage = StringIO()
 url = "http://shell.storm.pm:8079/api/query"
-data = "select * where Metadata/Sourcename = 'LED Model Driver'"
+query = "select * where Metadata/Sourcename = 'LED Model Driver'"
 c = pycurl.Curl()
 c.setopt(pycurl.URL, url)
 c.setopt(c.WRITEFUNCTION, storage.write)
 c.setopt(pycurl.POST, 1)
-c.setopt(pycurl.POSTFIELDS, data)
-data =  c.perform()
+c.setopt(pycurl.POSTFIELDS, query)
+c.perform()
 c.close()
 adjList = {}
 content = json.loads(storage.getvalue())
 
+index = {'/led_driver/1/index': {
+            'Metadata': {
+                'Sourcename': "LED Path App Stream",
+                'Data': "Random Length Vector"
+            },
+            'Properties': {
+                "UnitofMeasure": "vector",
+                "UnitofTime": "s",
+                "StreamType": "object"
+            },
+            'Readings': [],
+            'uuid': '99203a86-ec58-11e4-953c-5cc5d4ded1b',
+        },
+        }
+rgb = {'/led_driver/1/rgb': {
+            'Metadata': {
+                'Sourcename': "LED Path App Stream",
+                'Data': "Random Length Vector"
+            },
+            'Properties': {
+                "UnitofMeasure": "vector",
+                "UnitofTime": "s",
+                "StreamType": "object"
+            },
+            'Readings': [],
+            'uuid': '99203a86-ec58-11e4-953c-5cc5d4ded1c',
+        },
+        }
+show = {'/led_driver/1/show': {
+            'Metadata': {
+                'Sourcename': "LED Path App Stream",
+                'Data': "Random Length Vector"
+            },
+            'Properties': {
+                "UnitofMeasure": "unit",
+                "UnitofTime": "s",
+                "ReadingType": "double"
+            },
+            'Readings': [],
+            'uuid': '99203a86-ec58-11e4-953c-5cc5d4ded1c',
+        },
+        }
+
+
 def cb_src(points, path_src):
-	print "Src callback"
-    print "Points:", points
-    print "\nData:", path_src
-    print table
+    print "SOURCE CALLBACK"
     src = path_src[0][0][-1] + 0.0
     curr_time= time.time()
-    #self.add('/src', curr_time, src)
-    if (path_src[0][0][-2] not in self.table.keys()):
+    if (path_src[0][0][-2] not in table.keys()):
         table[path_src[0][0][-2]] = {}
     table[path_src[0][0][-2]][0] = src
     
 def cb_dst(points, path_dst):
-	print "Dst callback"
-    print "Points:", points
-    print "\nData:", path_dst
-    print table
+    print "DESTINATION CALLBACK"
     dst = path_dst[0][0][-1] + 0.0
     curr_time= time.time()
-    #self.add('/dst', curr_time, dst)
     if (path_dst[0][0][-2] not in table.keys()):
         table[path_dst[0][0][-2]] = {}
     table[path_dst[0][0][-2]][1] = dst
 
 def sendPath():
     print "Sending data to led driver"
-	print self.table
-    if (len(self.table.keys()) > 0):
-        earliest_time = min(self.table, key=self.table.get)
-        src = self.table[earliest_time][0]
-        dst = self.table[earliest_time][1]
-        del self.table[earliest_time]
-    path = self.getLedIndices(int(src), int(dst))
-	for index in path:
-		print(index)
-		curr = time.time()]
-		time.sleep(1)
-	self.add('/show', time.time(), 1.0)
-	time.sleep(1)
-	self.add('/show', time.time(), 0.0)
+    print table
+    if (len(table.keys()) > 0):
+        earliest_time = min(table, key=table.get)
+        print table[earliest_time]
+	src = table[earliest_time][0]
+        dst = table[earliest_time][1]
+        del table[earliest_time]
+        path = getLedIndices(int(src), int(dst))
+        now = int(time.time())
+        index['/led_driver/1/index']['Readings'] = [[now, path]]
+	rgb['/led_driver/1/rgb']['Readings'] = [[now, path]]
+        archiveraddurl = 'http://shell.storm.pm:8079/add/apikeyhere'
+        print(requests.post(archiveraddurl, data = json.dumps(index)))
+	print(requests.post(archiveraddurl, data = json.dumps(rgb)))
 
 def createAdjacencyList(metadata):
     for key, value in metadata.iteritems():
@@ -80,7 +117,7 @@ def getLedIndices(start, end):
             rangeEnd = end if start <=end else start
             ledList.extend(range(rangeStart, rangeEnd+1))
     elif (len(path) > 1):
-            ledList.extend(self.getIndicesSubrange(start, path[0]))
+            ledList.extend(getIndicesSubrange(start, path[0]))
             for i in range(1, len(path)-1):
                     rangeValue = [int(x) for x in path[i].split('-')]
                     ledList.extend(range(rangeValue[0], rangeValue[1]+1))
@@ -140,5 +177,5 @@ r1.connect()
 r2.connect()
 util.periodicSequentialCall(sendPath).start(1)
 createAdjacencyList(content[0]['Metadata']['AdjacencyList'])
-print content
-print getLedIndices(1, 9);
+
+reactor.run()
