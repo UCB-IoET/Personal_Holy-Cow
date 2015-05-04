@@ -25,8 +25,11 @@ c.perform()
 c.close()
 adjList = {}
 content = json.loads(storage.getvalue())
+indexpath = 'led_driver/1/index'
+rgbpath = '/led_driver/1/rgb'
+showpath = '/led_driver/1/show'
 
-index = {'/led_driver/1/index': {
+index = {indexpath : {
             'Metadata': {
                 'Sourcename': "LED Path App Stream",
                 'Data': "Random Length Vector"
@@ -37,10 +40,10 @@ index = {'/led_driver/1/index': {
                 "StreamType": "object"
             },
             'Readings': [],
-            'uuid': '99203a86-ec58-11e4-953c-5cc5d4ded1b',
+            'uuid': '06d644a6-1c03-11e5-965d-6003089ed1d0',
         },
         }
-rgb = {'/led_driver/1/rgb': {
+rgb = {rgbpath : {
             'Metadata': {
                 'Sourcename': "LED Path App Stream",
                 'Data': "Random Length Vector"
@@ -54,7 +57,7 @@ rgb = {'/led_driver/1/rgb': {
             'uuid': '99203a86-ec58-11e4-953c-5cc5d4ded1c',
         },
         }
-show = {'/led_driver/1/show': {
+show = {showpath: {
             'Metadata': {
                 'Sourcename': "LED Path App Stream",
                 'Data': "Random Length Vector"
@@ -96,9 +99,10 @@ def sendPath():
         dst = table[earliest_time][1]
         del table[earliest_time]
         path = getLedIndices(int(src), int(dst))
+	pathrgb = [31]*len(path)
         now = int(time.time())
-        index['/led_driver/1/index']['Readings'] = [[now, path]]
-	rgb['/led_driver/1/rgb']['Readings'] = [[now, path]]
+        index[indexpath]['Readings'] = [[now, path]]
+	rgb[rgbpath]['Readings'] = [[now, pathrgb]]
         archiveraddurl = 'http://shell.storm.pm:8079/add/apikeyhere'
         print(requests.post(archiveraddurl, data = json.dumps(index)))
 	print(requests.post(archiveraddurl, data = json.dumps(rgb)))
