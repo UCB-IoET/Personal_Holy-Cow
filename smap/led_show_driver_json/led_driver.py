@@ -6,73 +6,98 @@ import socket
 from smap.archiver.client import RepublishClient
 from smap import driver, util
 
+archiverurl = 'http://shell.storm.pm:8079'
+archiveraddurl = 'http://shell.storm.pm:8079/add/apikeyhere'
+rate = 1
+subscription_index = 'Path= "/led_driver/1/index"'
+subscription_rgb = 'Path= "/led_driver/1/rgb"'
+subscription_show = 'Path= "/led_driver/1/show"'
+# Table to store data to be sent
+table={}
+# Create socket
+UDP_IP = "2001:470:832b:2:212:6d02::304f" #all IPs
+UDP_PORT = 1444
+sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
 
-class ledDriver(driver.SmapDriver):
-    
-    def setup(self, opts):
-        self.rate = float(opts.get('rate', 1))
-        self.add_timeseries('/index', 'unit', data_type='double')
-	self.add_timeseries('/rgb', 'unit', data_type='double')
-	self.archiverurl = opts.get('archiverurl','http://shell.storm.pm:8079')                                                
-        self.subscription_index = 'Path= "/led_driver/1/index"'
-	self.subscription_rgb = 'Path= "/led_driver/1/rgb"'
-	self.subscription_show = 'Path= "/led_driver/1/show"'
-        self.r1 = RepublishClient(self.archiverurl, self.cb_index, restrict=self.subscription_index) 
-	self.r2 = RepublishClient(self.archiverurl, self.cb_rgb, restrict=self.subscription_rgb)  
-	self.r3 = RepublishClient(self.archiverurl, self.cb_show, restrict=self.subscription_show)
-	# Table to store data to be sent
-	self.table = {} 
-	# Create socket
-	self.UDP_IP = "2001:470:832b:2:212:6d02::304f" #all IPs
-	self.UDP_PORT = 1444 
-	self.sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
+index = {indexpath : {
+            'Metadata': {
+                'Sourcename': "LED Path App Stream",
+                'Data': "Random Length Vector"
+            },
+            'Properties': {
+                "UnitofMeasure": "vector",
+                "UnitofTime": "s",
+                "StreamType": "object"
+            },
+            'Readings': [],
+            'uuid': '19203a86-ec58-11e4-953c-5cc5d4ded1a',
+        },
+        }
+rgb = {rgbpath : {
+            'Metadata': {
+                'Sourcename': "LED Path App Stream",
+                'Data': "Random Length Vector"
+            },
+            'Properties': {
+                "UnitofMeasure": "vector",
+                "UnitofTime": "s",
+                "StreamType": "object"
+            },
+            'Readings': [],
+            'uuid': '19203a86-ec58-11e4-953c-5cc5d4ded1d',
+        },
+        }
 
-    def cb_index(self, points, led_index ):
-        print "Points: ",points
-	print "\nData" , led_index
-	print "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
-	print self.table
-	index = led_index[0][0][-1] + 0.0
-	curr_time = time.time()
+def cb_index(points, led_index):
+    print "INDEX CALLBACK"
+    print "Points: ",points
+    print "\nData" , led_index
+	print table
+	index = led_index[0][0][-1]
+    print index
+    now = int(time.time())
+    index[indexpath]['Readings'] = [[now, path]]
+    print(requests.post(archiveraddurl, data = json.dumps(index)))
+	print(requests.post(archiveraddurl, data = json.dumps(rgb)))
 	self.add('/index', curr_time, index)
 	print(led_index[0][0][-2])
-	if (led_index[0][0][-2] not in self.table.keys()):
-		self.table[led_index[0][0][-2]] = {}
-	self.table[led_index[0][0][-2]][0] = index
+	if (led_index[0][0][-2] not in table.keys()):
+		table[led_index[0][0][-2]] = {}
+	table[led_index[0][0][-2]][0] = index
 
-    def cb_rgb(self, points, led_rgb ):
-        print "Points: ",points
+def cb_rgb(points, led_rgb):
+    print "RGB CALLBACK"
+    print "Points: ",points
 	print "\nData" , led_rgb
-	print "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
-	rgb = led_rgb[0][0][-1] + 0.0
-	curr_time = time.time()
-	self.add('/rgb', curr_time, rgb)
+	rgb = led_rgb[0][0][-1]
+    print rgb
+    now = int(time.time())
+	rgb[rgbpath]['Readings'] = [[now, pathrgb]]
 	print(led_rgb[0][0][-2])
-	if (led_rgb[0][0][-2] not in self.table.keys()):
-		self.table[led_rgb[0][0][-2]] = {}
-	self.table[led_rgb[0][0][-2]][1] = rgb
+	if (led_rgb[0][0][-2] not in table.keys()):
+		table[led_rgb[0][0][-2]] = {}
+	table[led_rgb[0][0][-2]][1] = rgb
 
-    def cb_show(self, points, led_show ):
+def cb_show(points, led_show ):
+    print "SHOW CALLBACK"
 	print "Points: ",points
 	print "\nData" , led_show
-	print "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"
 	show = led_show[0][0][-1]
 	if (show == 1):
 		msg = {}
 		msg["type"] = "display"
 		print msg
 		msg_pack = msgpack.packb(msg)
-		self.sock.sendto(msg_pack, (self.UDP_IP, self.UDP_PORT))
+		sock.sendto(msg_pack, (UDP_IP, UDP_PORT))
 
-    def send_rgb(self):
-	print "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC"
+def send_rgb():
 	print "Sending data to led strip"
-	print self.table
-	if (len(self.table.keys()) > 0):
-		earliest_time = min(self.table, key=self.table.get)
-		index = self.table[earliest_time][0]
-		rgb = self.table[earliest_time][1]
-		del self.table[earliest_time]
+	print table
+	if (len(table.keys()) > 0):
+		earliest_time = min(table, key=table.get)
+		index = table[earliest_time][0]
+		rgb = table[earliest_time][1]
+		del table[earliest_time]
 		msg = {}
 		msg["type"] = "set"
 		msg["index"] = index
@@ -80,29 +105,14 @@ class ledDriver(driver.SmapDriver):
 		print msg
 		msg_pack = msgpack.packb(msg)
 		print "sending"
-		print(self.sock.sendto(msg_pack, (self.UDP_IP, self.UDP_PORT)))
-	
+		print(sock.sendto(msg_pack, (UDP_IP, UDP_PORT)))
 
-    def start(self):
-	self.r1.connect()
-	self.r2.connect()
-	self.r3.connect()
-	util.periodicSequentialCall(self.send_rgb).start(1)
+r1 = RepublishClient(archiverurl, cb_index, restrict=subscription_index) 
+r2 = RepublishClient(archiverurl, cb_rgb, restrict=subscription_rgb)  
+r3 = RepublishClient(archiverurl, cb_show, restrict=subscription_show)
+r1.connect()
+r2.connect()
+r3.connect()
+util.periodicSequentialCall(send_rgb).start(1)
 
-    def stop(self):
-     print "Quit"
-     self.stopping = True
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+reactor.run()
