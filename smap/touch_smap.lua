@@ -5,9 +5,18 @@ MPR121 = require "mpr121"
 shellip = "2001:470:66:3f9::2"
 listen_port = 1337
 
+--[[
+coffeeIndex = 10
+tvIndex = 23
+bathroomIndex = 30
+bookshelfIndex = 40
+cradleIndex = 50
+]]--
+
 startTouchIndex = 0
 endTouchIndex = 64
 startLedIndex = 0
+
 
 touchConnect = true
 
@@ -81,11 +90,10 @@ storm.bl.enable("unused", onconnectble, function()
 
    local touch_handle = storm.bl.addservice(0x1343)
    char_handle = storm.bl.addcharacteristic(touch_handle, 0x1344, function(x)
-		print(x)
+		
 		print("Inside"..x)
 		--Destination
-		local dest = tonumber(x,16)
-        print(dest)
+		local dest = tonumber(x, 16)
 
 		--Source
 		if (touchConnect == true and dest > -1) then
