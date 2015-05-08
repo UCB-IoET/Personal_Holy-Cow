@@ -7,26 +7,24 @@ from smap.archiver.client import RepublishClient
 from smap import driver, util
 
 
-class ledDriver(driver.SmapDriver):
+class ledShowDriver(driver.SmapDriver):
     
     def setup(self, opts):
         self.rate = float(opts.get('rate', 1))
         self.add_timeseries('/index', 'unit', data_type='double')
 	self.add_timeseries('/rgb', 'unit', data_type='double')
+	self.add_timeseries('/show','unit', data_type='double')
 	self.archiverurl = opts.get('archiverurl','http://shell.storm.pm:8079')                                                
-        self.subscription_index = 'uuid = "46c2c7f1-c2fd-51c5-bbde-f44f121f149a"'
-        self.subscription_rgb = 'uuid = "3107b620-db44-56cb-9836-b65188546e60"'
-        self.subscription_show = 'uuid = "39309dad-8b2f-598c-a91b-80598c8ff444"'
-        #self.subscription_index = 'Path= "/led_driver_new/1/index"'
-	#self.subscription_rgb = 'Path= "/led_driver_new/1/rgb"'
-	#self.subscription_show = 'Path= "/led_driver_new/1/show"'
+        self.subscription_index = opts.get('subscription','Path= "/path_app/1/index"')
+	self.subscription_rgb = opts.get('subscription','Path= "/path_app/1/rgb"')
+	self.subscription_show = opts.get('subscription', 'Path= "/path_app/1/show"')
         self.r1 = RepublishClient(self.archiverurl, self.cb_index, restrict=self.subscription_index) 
 	self.r2 = RepublishClient(self.archiverurl, self.cb_rgb, restrict=self.subscription_rgb)  
 	self.r3 = RepublishClient(self.archiverurl, self.cb_show, restrict=self.subscription_show)
 	# Table to store data to be sent
 	self.table = {} 
 	# Create socket
-	self.UDP_IP = "2001:470:4956:2:212:6d02::304f" #all IPs
+	self.UDP_IP = "2001:470:832b:2:212:6d02::304f" #all IPs
 	self.UDP_PORT = 1444 
 	self.sock = socket.socket(socket.AF_INET6, socket.SOCK_DGRAM)
 
@@ -35,7 +33,6 @@ class ledDriver(driver.SmapDriver):
 	print "\nData" , led_index
 	print "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
 	print self.table
-	print led_index
 	index = led_index[0][0][-1] + 0.0
 	curr_time = time.time()
 	self.add('/index', curr_time, index)
@@ -48,7 +45,6 @@ class ledDriver(driver.SmapDriver):
         print "Points: ",points
 	print "\nData" , led_rgb
 	print "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
-	print led_rgb
 	rgb = led_rgb[0][0][-1] + 0.0
 	curr_time = time.time()
 	self.add('/rgb', curr_time, rgb)
@@ -62,6 +58,7 @@ class ledDriver(driver.SmapDriver):
 	print "\nData" , led_show
 	print "DDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDDD"
 	show = led_show[0][0][-1]
+	self.add('/show', time.time(), show)
 	if (show == 1):
 		msg = {}
 		msg["type"] = "display"
@@ -76,7 +73,7 @@ class ledDriver(driver.SmapDriver):
 	if (len(self.table.keys()) > 0):
 		earliest_time = min(self.table, key=self.table.get)
 		index = self.table[earliest_time][0]
-		rgb = self.table[earliest_time][1]
+		rgb = 31 #self.table[earliest_time][1]
 		del self.table[earliest_time]
 		msg = {}
 		msg["type"] = "set"
@@ -91,7 +88,7 @@ class ledDriver(driver.SmapDriver):
     def start(self):
 	self.r1.connect()
 	self.r2.connect()
-	self.r3.connect()
+	#self.r3.connect()
 	util.periodicSequentialCall(self.send_rgb).start(1)
 
     def stop(self):
