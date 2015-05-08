@@ -5,15 +5,18 @@ MPR121 = require "mpr121"
 shellip = "2001:470:66:3f9::2"
 listen_port = 1337
 
+--[[
 coffeeIndex = 10
 tvIndex = 23
 bathroomIndex = 30
 bookshelfIndex = 40
 cradleIndex = 50
+]]--
 
 startTouchIndex = 0
 endTouchIndex = 64
 startLedIndex = 0
+
 
 touchConnect = true
 
@@ -90,18 +93,7 @@ storm.bl.enable("unused", onconnectble, function()
 		
 		print("Inside"..x)
 		--Destination
-		local dest = -1
-		if (x == "Coffeemaker") then
-		    dest = coffeeIndex
-		elseif (x == "TV") then
-		    dest = tvIndex
-		elseif (x == "Bathroom") then
-		    dest = bathroomIndex
-		elseif (x == "Bookshelf") then
-		    dest = bookshelfIndex
-		elseif (x == "Cradle") then
-		    dest = cradleIndex
-		end
+		local dest = tonumber(x, 16)
 
 		--Source
 		if (touchConnect == true and dest > -1) then
